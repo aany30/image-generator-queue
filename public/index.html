@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Image Prompt Automator</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Brand image batcher</p>
+            <h1>Image Prompt Automator</h1>
+          </div>
+          <div class="status-pill" id="statusPill">Ready</div>
+        </header>
+
+        <section class="controls">
+          <div class="panel prompt-panel">
+            <div class="panel-heading">
+              <label for="prompt">Batch prompt</label>
+              <p>This prompt will be applied to every queued image.</p>
+            </div>
+            <textarea id="prompt" spellcheck="true">Edit this image into a premium brand campaign visual. Preserve the main subject from the uploaded image, use polished studio lighting, sharp product detail, elegant composition, and keep the result realistic.</textarea>
+            <div class="prompt-actions">
+              <button id="samplePrompt" type="button">Use brand polish prompt</button>
+              <span id="promptCount">0 characters</span>
+            </div>
+          </div>
+
+          <div class="panel settings-panel">
+            <div class="setting-grid">
+              <label>
+                Model
+                <select id="model">
+                  <option value="gpt-image-1.5">gpt-image-1.5</option>
+                  <option value="gpt-image-1">gpt-image-1</option>
+                  <option value="gpt-image-1-mini">gpt-image-1-mini</option>
+                </select>
+              </label>
+              <label>
+                Size
+                <select id="size">
+                  <option value="1024x1024">Square</option>
+                  <option value="1024x1536">Portrait</option>
+                  <option value="1536x1024">Landscape</option>
+                </select>
+              </label>
+              <label>
+                Quality
+                <select id="quality">
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+            </div>
+
+            <button class="primary" id="generateBtn" type="button" disabled>Start queue</button>
+          </div>
+        </section>
+
+        <section class="drop-zone" id="dropZone">
+          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+          <div class="drop-copy">
+            <strong>Drop up to 10 images here</strong>
+            <span>PNG, JPG, or WEBP. Each image gets the same prompt.</span>
+          </div>
+          <button id="browseBtn" type="button">Choose images</button>
+        </section>
+
+        <section class="batch-header">
+          <div>
+            <h2>Batch queue</h2>
+            <p id="queueMeta">No images selected</p>
+          </div>
+          <div class="queue-actions">
+            <button id="retryFailedBtn" type="button" hidden>Retry failed</button>
+            <button id="clearCompletedBtn" type="button" hidden>Clear completed</button>
+            <button id="clearBtn" type="button" disabled>Clear</button>
+          </div>
+        </section>
+
+        <section class="queue-stats" id="queueStats" aria-live="polite">
+          <div>
+            <span id="totalCount">0</span>
+            <strong>Total</strong>
+          </div>
+          <div>
+            <span id="waitingCount">0</span>
+            <strong>Waiting</strong>
+          </div>
+          <div>
+            <span id="completedCount">0</span>
+            <strong>Completed</strong>
+          </div>
+          <div>
+            <span id="failedCount">0</span>
+            <strong>Failed</strong>
+          </div>
+        </section>
+
+        <section class="grid" id="imageGrid" aria-live="polite"></section>
+      </section>
+    </main>
+
+    <template id="imageCardTemplate">
+      <article class="image-card">
+        <div class="preview-wrap">
+          <img class="source-img" alt="">
+          <img class="result-img" alt="">
+          <div class="progress-ring"></div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3></h3>
+            <p class="card-status">Waiting</p>
+          </div>
+          <a class="download-link" download>Download</a>
+        </div>
+      </article>
+    </template>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
