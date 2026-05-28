@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
 const port = Number(process.env.PORT || 4173);
+const host = process.env.HOST || "0.0.0.0";
 
 async function loadLocalEnv() {
   try {
@@ -173,6 +174,10 @@ async function serveStatic(req, res) {
 }
 
 const server = createServer((req, res) => {
+  if (req.method === "GET" && req.url === "/health") {
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (req.method === "POST" && req.url === "/api/generate") {
     return handleGenerate(req, res);
   }
@@ -185,6 +190,6 @@ const server = createServer((req, res) => {
   res.end("Method not allowed");
 });
 
-server.listen(port, () => {
-  console.log(`Image Prompt Automator running at http://localhost:${port}`);
+server.listen(port, host, () => {
+  console.log(`Image Prompt Automator running at http://${host}:${port}`);
 });
