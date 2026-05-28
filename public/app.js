@@ -1,5 +1,26 @@
 const maxImages = 10;
 const storageKey = "imagePromptAutomator.settings.v1";
+const promptHistoryKey = "imagePromptAutomator.promptHistory.v1";
+const maxPromptHistory = 12;
+const imageTextMarker = "Text to place on image:";
+const imageTextSeparator = " | ";
+const imageTextOptions = [
+  "Dream cocoon by toliawala",
+  "Dreamland of fantasies",
+  "100% cotton",
+  "cotton",
+  "polyester",
+  "shrink free",
+  "king size",
+  "queen size",
+  "single bed",
+  "double bed",
+  "satin feel micro cotton",
+  "100% micro cotton",
+  "breathable",
+  "all season comfort",
+  "soft and smooth"
+];
 const samplePrompt = "Edit this image into a premium brand campaign visual. Preserve the main subject from the uploaded image, use polished studio lighting, sharp product detail, elegant composition, and keep the result realistic.";
 
 const state = {
@@ -11,6 +32,10 @@ const els = {
   prompt: document.querySelector("#prompt"),
   promptCount: document.querySelector("#promptCount"),
   samplePrompt: document.querySelector("#samplePrompt"),
+  promptHistory: document.querySelector("#promptHistory"),
+  clearPromptHistory: document.querySelector("#clearPromptHistory"),
+  textChipGrid: document.querySelector("#textChipGrid"),
+  clearImageText: document.querySelector("#clearImageText"),
   model: document.querySelector("#model"),
   size: document.querySelector("#size"),
   quality: document.querySelector("#quality"),
@@ -73,7 +98,106 @@ function restoreSettings() {
 
 function updatePromptCount() {
   els.promptCount.textContent = `${els.prompt.value.trim().length} characters`;
+  renderImageTextButtons();
   updateActions();
+}
+
+function getImageTextSelections() {
+  const markerLine = els.prompt.value
+    .split(/\r?\n/)
+    .find((line) => line.trim().startsWith(imageTextMarker));
+
+  if (!markerLine) return [];
+
+  return markerLine
+    .slice(markerLine.indexOf(imageTextMarker) + imageTextMarker.length)
+    .split(imageTextSeparator)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function setImageTextSelections(selections) {
+  const promptWithoutMarker = els.prompt.value
+    .split(/\r?\n/)
+    .filter((line) => !line.trim().startsWith(imageTextMarker))
+    .join("\n")
+    .trimEnd();
+
+  els.prompt.value = selections.length
+    ? `${promptWithoutMarker}\n\n${imageTextMarker} ${selections.join(imageTextSeparator)}`.trim()
+    : promptWithoutMarker;
+
+  handleSettingChange();
+}
+
+function toggleImageText(text) {
+  const selections = getImageTextSelections();
+  const nextSelections = selections.includes(text)
+    ? selections.filter((item) => item !== text)
+    : [...selections, text];
+
+  setImageTextSelections(nextSelections);
+}
+
+function renderImageTextButtons() {
+  const selections = getImageTextSelections();
+  els.textChipGrid.innerHTML = "";
+  els.clearImageText.disabled = selections.length === 0;
+
+  imageTextOptions.forEach((text) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "text-chip";
+    button.textContent = text;
+    button.setAttribute("aria-pressed", String(selections.includes(text)));
+    button.addEventListener("click", () => toggleImageText(text));
+    els.textChipGrid.append(button);
+  });
+}
+
+function getPromptHistory() {
+  const rawHistory = localStorage.getItem(promptHistoryKey);
+  if (!rawHistory) return [];
+
+  try {
+    const prompts = JSON.parse(rawHistory);
+    return Array.isArray(prompts) ? prompts.filter((prompt) => typeof prompt === "string" && prompt.trim()) : [];
+  } catch {
+    localStorage.removeItem(promptHistoryKey);
+    return [];
+  }
+}
+
+function renderPromptHistory() {
+  const prompts = getPromptHistory();
+  els.promptHistory.innerHTML = "";
+
+  if (!prompts.length) {
+    els.promptHistory.append(new Option("No saved prompts yet", ""));
+    els.promptHistory.disabled = true;
+    els.clearPromptHistory.disabled = true;
+    return;
+  }
+
+  els.promptHistory.disabled = false;
+  els.clearPromptHistory.disabled = false;
+  els.promptHistory.append(new Option("Choose a previous prompt", ""));
+  prompts.forEach((prompt) => {
+    const label = prompt.length > 78 ? `${prompt.slice(0, 75)}...` : prompt;
+    els.promptHistory.append(new Option(label, prompt));
+  });
+}
+
+function savePromptToHistory(prompt) {
+  const prompts = getPromptHistory();
+  const nextPrompts = [prompt, ...prompts.filter((item) => item !== prompt)].slice(0, maxPromptHistory);
+  localStorage.setItem(promptHistoryKey, JSON.stringify(nextPrompts));
+  renderPromptHistory();
+}
+
+function clearPromptHistory() {
+  localStorage.removeItem(promptHistoryKey);
+  renderPromptHistory();
 }
 
 function updateActions() {
@@ -227,10 +351,14 @@ async function processQueue(filter) {
 }
 
 function startQueue() {
+  const prompt = els.prompt.value.trim();
+  if (prompt) savePromptToHistory(prompt);
   processQueue((item) => item.status === "waiting" || item.status === "error");
 }
 
 function retryFailed() {
+  const prompt = els.prompt.value.trim();
+  if (prompt) savePromptToHistory(prompt);
   processQueue((item) => item.status === "error");
 }
 
@@ -257,6 +385,10 @@ els.imageInput.addEventListener("change", (event) => {
   event.target.value = "";
 });
 els.prompt.addEventListener("input", handleSettingChange);
+els.prompt.addEventListener("blur", () => {
+  const prompt = els.prompt.value.trim();
+  if (prompt) savePromptToHistory(prompt);
+});
 els.model.addEventListener("change", handleSettingChange);
 els.size.addEventListener("change", handleSettingChange);
 els.quality.addEventListener("change", handleSettingChange);
@@ -264,6 +396,14 @@ els.samplePrompt.addEventListener("click", () => {
   els.prompt.value = samplePrompt;
   handleSettingChange();
 });
+els.promptHistory.addEventListener("change", () => {
+  if (!els.promptHistory.value) return;
+  els.prompt.value = els.promptHistory.value;
+  handleSettingChange();
+  els.promptHistory.value = "";
+});
+els.clearImageText.addEventListener("click", () => setImageTextSelections([]));
+els.clearPromptHistory.addEventListener("click", clearPromptHistory);
 els.generateBtn.addEventListener("click", startQueue);
 els.retryFailedBtn.addEventListener("click", retryFailed);
 els.clearCompletedBtn.addEventListener("click", clearCompleted);
@@ -286,5 +426,7 @@ els.clearBtn.addEventListener("click", clearQueue);
 els.dropZone.addEventListener("drop", (event) => addFiles(event.dataTransfer.files));
 
 restoreSettings();
+renderPromptHistory();
+renderImageTextButtons();
 updatePromptCount();
 render();
