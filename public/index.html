@@ -28,6 +28,22 @@
               <button id="samplePrompt" type="button">Use brand polish prompt</button>
               <span id="promptCount">0 characters</span>
             </div>
+            <div class="image-text-panel">
+              <div class="image-text-heading">
+                <label>Text to add on image</label>
+                <button id="clearImageText" type="button" disabled>Clear text</button>
+              </div>
+              <div class="text-chip-grid" id="textChipGrid" aria-label="Image text options"></div>
+            </div>
+            <div class="prompt-history">
+              <div>
+                <label for="promptHistory">Prompt history</label>
+                <select id="promptHistory">
+                  <option value="">No saved prompts yet</option>
+                </select>
+              </div>
+              <button id="clearPromptHistory" type="button" disabled>Clear history</button>
+            </div>
           </div>
 
           <div class="panel settings-panel">
