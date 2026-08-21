@@ -297,12 +297,12 @@ async function addFiles(files) {
   render();
 }
 
-async function requestGeneration(item) {
+async function requestGeneration(item, prompt) {
   const response = await fetch("/api/generate", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      prompt: els.prompt.value.trim(),
+      prompt,
       imageDataUrl: item.source,
       model: els.model.value,
       size: els.size.value,
@@ -318,7 +318,7 @@ async function requestGeneration(item) {
   return payload.imageDataUrl;
 }
 
-async function processQueue(filter) {
+async function processQueue(prompt, filter) {
   const queue = state.items.filter(filter);
   if (!queue.length) return;
 
@@ -333,7 +333,7 @@ async function processQueue(filter) {
     render();
 
     try {
-      item.result = await requestGeneration(item);
+      item.result = await requestGeneration(item, prompt);
       item.status = "done";
       item.message = "Generated";
     } catch (error) {
@@ -353,13 +353,13 @@ async function processQueue(filter) {
 function startQueue() {
   const prompt = els.prompt.value.trim();
   if (prompt) savePromptToHistory(prompt);
-  processQueue((item) => item.status === "waiting" || item.status === "error");
+  processQueue(prompt, (item) => item.status === "waiting" || item.status === "error");
 }
 
 function retryFailed() {
   const prompt = els.prompt.value.trim();
   if (prompt) savePromptToHistory(prompt);
-  processQueue((item) => item.status === "error");
+  processQueue(prompt, (item) => item.status === "error");
 }
 
 function clearCompleted() {
